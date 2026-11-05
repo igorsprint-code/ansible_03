@@ -1,6 +1,6 @@
-variable "token" {
-  type        = string
-}
+# variable "token" {
+#   type        = string
+# }
 
 variable "cloud_id" {
   type        = string
