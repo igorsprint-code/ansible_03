@@ -194,4 +194,24 @@
       tags:
         - lighthouse
         - clone
+
+    - name: Create lighthouse directory
+      ansible.builtin.file:
+        path: /var/www/lighthouse
+        state: directory
+        mode: '0755'
+      tags:
+        - lighthouse
+        - create_directory
+
+    - name: Copy lighthouse files
+      ansible.builtin.copy:
+        src: "{{ lighthouse_dest }}"
+        dest: /var/www/lighthouse
+        remote_src: true
+        mode: preserve
+      tags:
+        - lighthouse
+        - copy_files
       
+
