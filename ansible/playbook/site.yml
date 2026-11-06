@@ -3,7 +3,7 @@
 ### clickhouse
 - name: Install Clickhouse
   hosts: clickhouse
-  
+  become: true
   handlers:
     - name: Start clickhouse service
       become: true
@@ -73,6 +73,7 @@
 
 - name: Install Vector
   hosts: vector
+  become: true
   handlers:
     - name: Start vector service
       become: true
@@ -176,6 +177,17 @@
 - name: Install lighthouse
   hosts: lighthouse
   become: true
+  
+  handlers:
+    - name: Start nginx service
+      become: true
+      ansible.builtin.service:
+        name: nginx
+        state: restarted
+        enabled: true
+      tags: 
+        - lighthouse
+        - restart nginx
 
   tasks:
     - name: Update apt cache
@@ -206,12 +218,33 @@
 
     - name: Copy lighthouse files
       ansible.builtin.copy:
-        src: "{{ lighthouse_dest }}"
+        src: "{{ lighthouse_dest }}/"
         dest: /var/www/lighthouse
         remote_src: true
         mode: preserve
       tags:
         - lighthouse
         - copy_files
-      
+
+    - name: Nginx conf
+      ansible.builtin.template:
+        src: ./templates/lighthouse_nginx.conf.j2
+        dest: /etc/nginx/sites-available/lighthouse
+      notify: Start nginx service
+      tags:
+        - lighthouse
+        - nginx_conf
+
+    - name:  Enable site
+      ansible.builtin.file:
+        src: /etc/nginx/sites-available/lighthouse
+        dest: /etc/nginx/sites-enabled/lighthouse
+        state: link
+      notify: Start nginx service
+      tags:
+        - lighthouse
+        - nginx_site_enabled
+
+    
+    
 
