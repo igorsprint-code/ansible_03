@@ -11,46 +11,47 @@
         name: clickhouse-server
         state: restarted
         enabled: true
-      tags: 
+      tags:
         - clickhouse
         - start service
-  
+
   tasks:
     - name: Get clickhouse distrib
       ansible.builtin.get_url:
         url: "https://packages.clickhouse.com/deb/pool/main/c/{{ item }}/{{ item }}_{{ clickhouse_version }}_amd64.deb"
-        dest: "./{{ item }}_{{ clickhouse_version }}_amd64.deb"
+        dest: "/tmp/{{ item }}_{{ clickhouse_version }}_amd64.deb"
         mode: '0644'
+
       with_items: "{{ clickhouse_packages }}"
-      tags: 
+      tags:
         - clickhouse
         - distr
 
     - name: Update apt cache
       ansible.builtin.apt:
-        update_cache: true 
-      
+        update_cache: true
+
     - name: Install clickhouse packages
       become: true
       ansible.builtin.apt:
-        deb: "./{{ item }}_{{ clickhouse_version }}_amd64.deb"
+        deb: "/tmp/{{ item }}_{{ clickhouse_version }}_amd64.deb"
       loop:
         - clickhouse-common-static
         - clickhouse-client
-        - clickhouse-server          
+        - clickhouse-server
       notify: Start clickhouse service
-      tags: 
+      tags:
         - clickhouse
         - distr
 
 
     - name: Flush handlers
-      meta: flush_handlers
-      tags: 
+      ansible.builtin.meta: flush_handlers
+      tags:
         - clickhouse
         - start service
 
-    - name: wait for clickhouse
+    - name: Wait for clickhouse
       ansible.builtin.wait_for:
         host: 127.0.0.1
         port: 9000
@@ -59,7 +60,6 @@
       tags:
         - clickhouse
         - wait
-    
     - name: Create database
       ansible.builtin.command: "clickhouse-client -q 'create database logs;'"
       register: create_db
@@ -81,17 +81,16 @@
         name: vector
         state: restarted
         enabled: true
-      tags: 
+      tags:
         - vector
         - restarservice
-  
   tasks:
     - name: Get vector distrib
       ansible.builtin.get_url:
         url: "https://packages.timber.io/vector/{{ vector_version }}/vector_{{ vector_version }}-1_amd64.deb"
         dest: "./vector_{{ vector_version }}_amd64.deb"
         mode: '0644'
-      tags: 
+      tags:
         - vector
         - distr
 
@@ -99,12 +98,9 @@
       become: true
       ansible.builtin.apt:
         update_cache: true
-      tags: 
+      tags:
         - vector
         - update
-      
-      
-
     - name: Install vector packages
       become: true
       ansible.builtin.apt:
@@ -116,7 +112,7 @@
 
     - name: Config vector
       become: true
-      template:
+      ansible.builtin.template:
         src: "templates/vector.yaml.j2"
         dest: "/etc/vector/vector.yaml"
         mode: '0644'
@@ -137,7 +133,6 @@
 - name: Install nginx
   hosts: lighthouse
   become: true
-  
   handlers:
     - name: Start nginx service
       become: true
@@ -145,7 +140,7 @@
         name: nginx
         state: restarted
         enabled: true
-      tags: 
+      tags:
         - nginx
         - start service
 
@@ -157,8 +152,8 @@
       tags:
         - nginx
         - update
-    
-    - name: install nginx
+
+    - name: Install nginx
       become: true
       ansible.builtin.package:
         name:
@@ -169,15 +164,12 @@
         - nginx
         - install
 
-
-
-
 ### lighthouse
 
 - name: Install lighthouse
   hosts: lighthouse
   become: true
-  
+
   handlers:
     - name: Start nginx service
       become: true
@@ -185,7 +177,7 @@
         name: nginx
         state: restarted
         enabled: true
-      tags: 
+      tags:
         - lighthouse
         - restart nginx
 
@@ -230,12 +222,13 @@
       ansible.builtin.template:
         src: ./templates/lighthouse_nginx.conf.j2
         dest: /etc/nginx/sites-available/lighthouse
+        mode: "0644"
       notify: Start nginx service
       tags:
         - lighthouse
         - nginx_conf
 
-    - name:  Enable site
+    - name: Enable site
       ansible.builtin.file:
         src: /etc/nginx/sites-available/lighthouse
         dest: /etc/nginx/sites-enabled/lighthouse
@@ -243,8 +236,4 @@
       notify: Start nginx service
       tags:
         - lighthouse
-        - nginx_site_enabled
-
-    
-    
-
+        - nginx_site_enable
