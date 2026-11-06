@@ -37,7 +37,7 @@
 
 ![check](screenshots/3.png)
 
-5. 
+5. Запускаем playbook с флагом `--diff`
 
 
 
